@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Editor from "@monaco-editor/react";
 import "./App.css";
 
-const WS_BASE = "ws://127.0.0.1:8000/ws";
+const WS_BASE = "wss://collab-code-editor-cnbj.onrender.com/ws";
 const DEBOUNCE_MS = 300;
 
 function App() {
