@@ -1,0 +1,13 @@
+# ---------- Python (backend) ----------
+venv/
+backend/venv/
+backend/__pycache__/
+*.pyc
+*.pyo
+.env
+.pytest_cache/
+
+# ---------- Editor / OS ----------
+.vscode/
+.DS_Store
+Thumbs.db

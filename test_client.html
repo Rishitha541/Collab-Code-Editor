@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Collab Editor Test - Day 5</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+        input, button { padding: 8px; font-size: 14px; margin: 4px; }
+        textarea {
+            width: 100%; height: 220px; margin-top: 10px;
+            background: #1e1e1e; color: #d4d4d4; border: 1px solid #444;
+            font-family: monospace; font-size: 14px; padding: 10px; box-sizing: border-box;
+        }
+        #log { border: 1px solid #444; padding: 10px; height: 100px; overflow-y: auto; margin-top: 10px; background: #252526; font-size: 12px; }
+        .status { color: #4ec9b0; }
+        .presence { color: #dcdcaa; font-style: italic; }
+        .warn { color: #f14c4c; }
+        #onlineList { margin-top: 10px; color: #9cdcfe; }
+        #versionTag { color: #808080; font-size: 12px; }
+        #cursors { margin-top: 8px; color: #f48771; font-size: 13px; }
+        #connState { font-weight: bold; }
+        #runBtn { background: #0e7c3f; color: white; font-weight: bold; }
+        #output { border: 1px solid #444; padding: 10px; margin-top: 10px; background: #0c0c0c; font-size: 13px; white-space: pre-wrap; min-height: 60px; }
+        .out-success { color: #4ec9b0; }
+        .out-error { color: #f14c4c; }
+        .running { color: #dcdcaa; }
+    </style>
+</head>
+<body>
+    <h2>Collab Editor Test — Day 5 (Debounce + Reconnect)</h2>
+
+    <div>
+        Username: <input id="username" value="User1" />
+        Room ID: <input id="roomId" value="room1" />
+        <button onclick="connect()">Connect</button>
+        <span id="connState" class="status">not connected</span>
+    </div>
+
+    <div id="onlineList">Online: (not connected)</div>
+    <div id="versionTag">version: -</div>
+    <div id="cursors">Cursors: (none)</div>
+
+    <textarea id="editor" placeholder="Start typing... (connect first)" oninput="onLocalEdit()" onclick="onCursorMove()" onkeyup="onCursorMove()"></textarea>
+
+    <button id="runBtn" onclick="runCode()">▶ Run Code</button>
+    <div id="output">Output will appear here...</div>
+
+    <div id="log"></div>
+
+    <script>
+        let ws = null;
+        let suppressNextInput = false;
+        let remoteCursors = {};
+        let debounceTimer = null;
+        const DEBOUNCE_MS = 300; // wait 300ms after last keystroke before sending
+        let currentRoomId = "";
+        let currentUsername = "";
+        let intentionalClose = false;
+
+        function log(text, className = "") {
+            const logDiv = document.getElementById("log");
+            const p = document.createElement("div");
+            p.className = className;
+            p.textContent = text;
+            logDiv.appendChild(p);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function setConnState(text, className) {
+            const el = document.getElementById("connState");
+            el.textContent = text;
+            el.className = className;
+        }
+
+        function connect() {
+            currentRoomId = document.getElementById("roomId").value;
+            currentUsername = document.getElementById("username").value;
+            intentionalClose = false;
+            openSocket();
+        }
+
+        function openSocket() {
+            ws = new WebSocket(`ws://127.0.0.1:8000/ws/${currentRoomId}?username=${encodeURIComponent(currentUsername)}`);
+
+            ws.onopen = () => {
+                log(`Connected to room: ${currentRoomId} as ${currentUsername}`, "status");
+                setConnState("connected", "status");
+            };
+
+            ws.onclose = () => {
+                setConnState("disconnected", "warn");
+                if (!intentionalClose) {
+                    log("Connection lost — retrying in 2s...", "warn");
+                    setTimeout(openSocket, 2000); // NEW: auto-reconnect
+                } else {
+                    log("Disconnected", "status");
+                }
+            };
+
+            ws.onerror = (e) => log("Error occurred", "warn");
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.type === "sync") {
+                    suppressNextInput = true;
+                    document.getElementById("editor").value = data.content;
+                    document.getElementById("versionTag").textContent = "version: " + data.version;
+                    updateOnlineList(data.online_users);
+                    (data.cursors || []).forEach(c => {
+                        remoteCursors[c.user_id] = { username: c.username, cursor_pos: c.cursor_pos };
+                    });
+                    renderCursors();
+                    log("Synced current document state", "status");
+                } else if (data.type === "edit") {
+                    suppressNextInput = true;
+                    document.getElementById("editor").value = data.content;
+                    document.getElementById("versionTag").textContent = "version: " + data.version;
+                    log(`${data.from_username} edited (v${data.version})`);
+                } else if (data.type === "cursor") {
+                    remoteCursors[data.user_id] = { username: data.username, cursor_pos: data.cursor_pos };
+                    renderCursors();
+                } else if (data.type === "user_joined") {
+                    log(`${data.username} joined the room`, "presence");
+                    updateOnlineList(data.online_users);
+                } else if (data.type === "user_left") {
+                    log(`${data.username} left the room`, "presence");
+                    updateOnlineList(data.online_users);
+                    delete remoteCursors[data.user_id];
+                    renderCursors();
+                } else if (data.type === "run_status") {
+                    document.getElementById("output").textContent = `Running (requested by ${data.requested_by})...`;
+                    document.getElementById("output").className = "running";
+                } else if (data.type === "run_result") {
+                    const outDiv = document.getElementById("output");
+                    let text = `[Run by ${data.requested_by}]\n`;
+                    if (data.stdout) text += data.stdout;
+                    if (data.stderr) text += "\n--- stderr ---\n" + data.stderr;
+                    outDiv.textContent = text;
+                    outDiv.className = data.success ? "out-success" : "out-error";
+                }
+            };
+        }
+
+        function updateOnlineList(users) {
+            document.getElementById("onlineList").textContent = "Online: " + users.join(", ");
+        }
+
+        function renderCursors() {
+            const entries = Object.values(remoteCursors);
+            if (entries.length === 0) {
+                document.getElementById("cursors").textContent = "Cursors: (none)";
+                return;
+            }
+            const text = entries.map(c => `${c.username} @ char ${c.cursor_pos}`).join("  |  ");
+            document.getElementById("cursors").textContent = "Cursors: " + text;
+        }
+
+        function onLocalEdit() {
+            if (suppressNextInput) {
+                suppressNextInput = false;
+                return;
+            }
+            // NEW: debounce — wait until typing pauses for DEBOUNCE_MS before sending.
+            // Without this, every single keystroke sends a full WebSocket message,
+            // which wastes bandwidth and can cause lag with fast typing.
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const content = document.getElementById("editor").value;
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: "edit", content: content }));
+                }
+            }, DEBOUNCE_MS);
+        }
+
+        function onCursorMove() {
+            const editor = document.getElementById("editor");
+            const pos = editor.selectionStart;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "cursor", cursor_pos: pos }));
+            }
+        }
+
+        function runCode() {
+            const code = document.getElementById("editor").value;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "run", code: code }));
+            } else {
+                log("Not connected — click Connect first.", "status");
+            }
+        }
+    </script>
+</body>
+</html>
