@@ -83,7 +83,7 @@ Requires Docker Desktop running locally for the code execution feature to work.
 - Conflict resolution uses last-write-wins rather than Operational Transform/CRDTs, which can occasionally overwrite concurrent edits in extreme timing cases.
 - Docker-based execution requires a host with Docker access, so it isn't available on the current public deployment (Render/Vercel free tier). **Planned next step:** migrate the backend to a Docker-capable host (e.g. AWS EC2 or Oracle Cloud free tier) so code execution works live, not just locally.
 
-## What I'd Improve With More Time[In progress]
+## Planned Improvements[In progress]
 
 - Deploy the backend to a Docker-capable host for a fully live execution demo
 - Persist documents to a database so rooms survive server restarts
