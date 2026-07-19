@@ -5,7 +5,7 @@ A full-stack collaborative code editor where multiple users can write and run Py
 **Live demo (collaborative editing):** https://collab-code-editor-orpin.vercel.app
 **Backend:** https://collab-code-editor-cnbj.onrender.com
 
-> Note: the live demo showcases real-time collaboration (sync, cursors, presence). The Docker-based code execution feature requires privileged host access that standard free-tier PaaS providers (Render, Vercel, Railway) don't expose — see [Code Execution Demo](#code-execution-demo) below for a local recording of that feature working end-to-end. **A migration to a Docker-capable host (e.g. a cloud VM) is planned to bring live code execution to the public deployment as well.**
+> Note: the live demo showcases real-time collaboration (sync, cursors, presence). The Docker-based code execution feature requires privileged host access that standard free-tier PaaS providers (Render, Vercel, Railway) don't expose, so it currently only runs when the project is set up locally (see [Running Locally](#running-locally)). **A migration to a Docker-capable host (e.g. a cloud VM) is planned to bring live code execution to the public deployment as well.**
 
 ---
 
@@ -56,10 +56,6 @@ Each room maintains its own in-memory document state and version counter. Edits 
 
 Code execution runs in a background thread pool so a slow/long-running script from one user doesn't block WebSocket message handling for anyone else, in any room.
 
-## Code Execution Demo
-
-Since Docker isn't available on the free hosting tiers used for this deployment, here's the sandboxed execution feature running locally, tested against real attack scenarios: infinite loop timeout protection, blocked filesystem writes, blocked network access, and graceful handling of syntax/runtime errors.
-
 ## Running Locally
 
 **Backend:**
@@ -87,9 +83,9 @@ Requires Docker Desktop running locally for the code execution feature to work.
 - Conflict resolution uses last-write-wins rather than Operational Transform/CRDTs, which can occasionally overwrite concurrent edits in extreme timing cases.
 - Docker-based execution requires a host with Docker access, so it isn't available on the current public deployment (Render/Vercel free tier). **Planned next step:** migrate the backend to a Docker-capable host (e.g. AWS EC2 or Oracle Cloud free tier) so code execution works live, not just locally.
 
-## What I'd Improve With More Time[In progress]
+## What I'd Improve With More Time
 
-- Deploy the backend to a Docker-capable host for a fully live execution demo
+- [In progress] Deploy the backend to a Docker-capable host for a fully live execution demo
 - Persist documents to a database so rooms survive server restarts
 - Add Operational Transform (or a CRDT like Yjs) for true conflict-free concurrent editing
 - Support additional languages beyond Python in the execution sandbox
