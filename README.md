@@ -1,4 +1,4 @@
-### 💻 CollabCode
+# 💻 CollabCode
 Real-Time Collaborative Code Editor with Sandboxed Execution
 
 Features • Architecture • Getting Started • Project Structure • Known Limitations
