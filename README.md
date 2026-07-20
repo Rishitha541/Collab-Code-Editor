@@ -1,39 +1,36 @@
-# CollabCode — Real-Time Collaborative Code Editor
+💻 CollabCode
+Real-Time Collaborative Code Editor with Sandboxed Execution
 
-A full-stack collaborative code editor where multiple users can write and run Python code together in real time, with each execution sandboxed in an isolated Docker container.
-
-**Live demo (collaborative editing):** https://collab-code-editor-orpin.vercel.app
-**Backend:** https://collab-code-editor-cnbj.onrender.com
-
-> ⚠️ Code execution works locally only — see [why](#running-locally) below.
-
-> Note: the live demo showcases real-time collaboration (sync, cursors, presence). The Docker-based code execution feature requires privileged host access that standard free-tier PaaS providers (Render, Vercel, Railway) don't expose, so it currently only runs when the project is set up locally (see [Running Locally](#running-locally)). **A migration to a Docker-capable host (e.g. a cloud VM) is planned to bring live code execution to the public deployment as well.**
+Features • Architecture • Getting Started • Project Structure • Known Limitations
 
 ---
 
-## Features
+CollabCode is a full-stack collaborative code editor where multiple users can write and run Python code together in real time, with each execution sandboxed inside an isolated, disposable Docker container.
 
-- **Real-time collaborative editing** — multiple users editing the same document simultaneously, synced over WebSockets
-- **Live cursor tracking** — see where collaborators are typing
-- **Presence awareness** — live "who's online" list per room
-- **Shareable room links** — copy a link to invite collaborators directly into your session
-- **Sandboxed code execution** — run Python code inside an isolated, disposable Docker container with:
-  - Network access disabled
-  - Memory and CPU limits enforced
-  - Read-only filesystem
-  - Execution timeout (kills infinite loops automatically)
-  - Non-root execution user
-- **Auto-reconnect** — automatically recovers from dropped connections
-- **Debounced sync** — edits are batched client-side to avoid flooding the server on every keystroke
+## ✨ Features
 
-## Tech Stack
+- 🔄 **Real-Time Collaborative Editing:** Multiple users edit the same document simultaneously, synced over WebSockets.
+- 🖱 **Live Cursor Tracking:** See exactly where collaborators are typing, in real time.
+- 🟢 **Presence Awareness:** A live "who's online" list per room.
+- 🔗 **Shareable Room Links:** Copy a link to invite collaborators directly into your session.
+- 📦 **Sandboxed Code Execution:** Run Python code inside an isolated container with network access disabled, memory/CPU limits, a read-only filesystem, execution timeouts, and a non-root user.
+- 🔁 **Auto-Reconnect:** Automatically recovers from dropped connections.
+- ⚡ **Debounced Sync:** Edits are batched client-side to avoid flooding the server on every keystroke.
 
-**Frontend:** React (Vite), Monaco Editor
-**Backend:** FastAPI, WebSockets, Python
-**Execution sandbox:** Docker (isolated per-run containers)
-**Deployment:** Vercel (frontend), Render (backend)
+## 🏗 Architecture
 
-## Architecture
+CollabCode is built on a real-time-first stack: a WebSocket-driven backend keeps every client in sync, while code execution is fully isolated from the main server process.
+
+### Tech Stack
+
+| Category | Technologies |
+|---|---|
+| Frontend | React (Vite), Monaco Editor |
+| Backend | FastAPI, WebSockets, Python |
+| Execution Sandbox | Docker (isolated per-run containers) |
+| Deployment (planned) | Vercel (frontend), Render (backend) — pending migration to a Docker-capable host |
+
+### Request Flow
 
 ```
 ┌─────────────┐         WebSocket          ┌──────────────┐
@@ -56,11 +53,18 @@ A full-stack collaborative code editor where multiple users can write and run Py
 
 Each room maintains its own in-memory document state and version counter. Edits use a last-write-wins conflict strategy — a deliberate simplification over full Operational Transform / CRDTs, chosen to fit project scope while still handling concurrent edits without crashing or corrupting state.
 
-Code execution runs in a background thread pool so a slow/long-running script from one user doesn't block WebSocket message handling for anyone else, in any room.
+Code execution runs in a background thread pool so a slow or long-running script from one user doesn't block WebSocket message handling for anyone else, in any room.
 
-## Running Locally
+## 🚀 Getting Started
 
-**Backend:**
+### Prerequisites
+
+- Node.js (v18 or higher)
+- Python (v3.10 or higher)
+- Docker Desktop (running, for the code execution feature)
+
+### Backend Setup
+
 ```bash
 cd backend
 python -m venv venv
@@ -70,24 +74,46 @@ docker build -t code-sandbox .
 uvicorn main:app --reload
 ```
 
-**Frontend:**
+### Frontend Setup
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Requires Docker Desktop running locally for the code execution feature to work.
+### Accessing the App
 
-## Known Limitations
+- Web App: http://localhost:5173
+- Backend API: http://localhost:8000
 
+## 📂 Project Structure
+
+```
+Collab-Code-Editor/
+├── frontend/                # React + Vite client
+│   ├── src/components/      # Editor, cursors, presence UI
+│   └── src/lib/             # WebSocket client, utilities
+├── backend/                 # FastAPI backend server
+│   ├── main.py               # WebSocket + REST entrypoints
+│   ├── sandbox/               # Docker execution logic
+│   └── rooms/                  # In-memory room/document state
+└── Dockerfile                # Sandbox container image
+```
+
+## ⚠️ Known Limitations
+
+- **Code execution is local-only.** Docker-based execution requires privileged host access that standard free-tier PaaS providers (Render, Vercel, Railway) don't expose, so it isn't available on the current public deployment. **Planned next step:** migrate the backend to a Docker-capable host (e.g. AWS EC2 or Oracle Cloud free tier) so code execution works live, not just locally.
 - Room state is stored in-memory — a server restart clears all active documents. A production version would persist rooms to PostgreSQL/Redis.
 - Conflict resolution uses last-write-wins rather than Operational Transform/CRDTs, which can occasionally overwrite concurrent edits in extreme timing cases.
-- Docker-based execution requires a host with Docker access, so it isn't available on the current public deployment (Render/Vercel free tier). **Planned next step:** migrate the backend to a Docker-capable host (e.g. AWS EC2 or Oracle Cloud free tier) so code execution works live, not just locally.
 
-## Planned Improvements *(in progress)*
+## 🔭 Planned Improvements *(in progress)*
 
 - Deploy the backend to a Docker-capable host for a fully live execution demo
 - Persist documents to a database so rooms survive server restarts
 - Add Operational Transform (or a CRDT like Yjs) for true conflict-free concurrent editing
 - Support additional languages beyond Python in the execution sandbox
+
+## 📄 License
+
+Distributed under the MIT License. See LICENSE for more information.
