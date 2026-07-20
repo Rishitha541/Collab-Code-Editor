@@ -1,4 +1,4 @@
-💻 CollabCode
+###💻 CollabCode
 Real-Time Collaborative Code Editor with Sandboxed Execution
 
 Features • Architecture • Getting Started • Project Structure • Known Limitations
@@ -113,7 +113,3 @@ Collab-Code-Editor/
 - Persist documents to a database so rooms survive server restarts
 - Add Operational Transform (or a CRDT like Yjs) for true conflict-free concurrent editing
 - Support additional languages beyond Python in the execution sandbox
-
-## 📄 License
-
-Distributed under the MIT License. See LICENSE for more information.
