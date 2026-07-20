@@ -1,7 +1,11 @@
-# 💻 CollabCode
-Real-Time Collaborative Code Editor with Sandboxed Execution
+<div align="center">
 
-Features • Architecture • Getting Started • Project Structure • Known Limitations
+# 💻 CollabCode
+### Real-Time Collaborative Code Editor with Sandboxed Execution
+
+**[Features](#-features)** • **[Architecture](#-architecture)** • **[Getting Started](#-getting-started)** • **[Project Structure](#-project-structure)** • **[Known Limitations](#%EF%B8%8F-known-limitations)**
+
+</div>
 
 ---
 
@@ -28,7 +32,7 @@ CollabCode is built on a real-time-first stack: a WebSocket-driven backend keeps
 | Frontend | React (Vite), Monaco Editor |
 | Backend | FastAPI, WebSockets, Python |
 | Execution Sandbox | Docker (isolated per-run containers) |
-| Deployment (planned) | Vercel (frontend), Render (backend) — pending migration to a Docker-capable host |
+| Deployment | Vercel (frontend), Render (backend) — code execution currently local-only, see [Known Limitations](#-known-limitations) |
 
 ### Request Flow
 
@@ -91,14 +95,18 @@ npm run dev
 
 ```
 Collab-Code-Editor/
-├── frontend/                # React + Vite client
-│   ├── src/components/      # Editor, cursors, presence UI
-│   └── src/lib/             # WebSocket client, utilities
-├── backend/                 # FastAPI backend server
-│   ├── main.py               # WebSocket + REST entrypoints
-│   ├── sandbox/               # Docker execution logic
-│   └── rooms/                  # In-memory room/document state
-└── Dockerfile                # Sandbox container image
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx           # Main UI: editor, room join, run panel
+│   │   ├── App.css           # Styling
+│   │   └── main.jsx
+│   └── package.json
+├── backend/
+│   ├── main.py                # FastAPI app + WebSocket endpoint + RoomManager
+│   ├── executor.py            # Docker sandboxed code execution logic
+│   ├── requirements.txt
+│   └── Dockerfile              # Sandbox container image definition
+└── README.md
 ```
 
 ## ⚠️ Known Limitations
